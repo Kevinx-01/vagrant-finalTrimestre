@@ -51,9 +51,13 @@ SCRIPT
 $wordpress = <<SCRIPT
 
 cd /var/www
-wget https://wordpress.org/latest.tar.gz
-tar -xzvf latest.tar.gz
+#####wget https://wordpress.org/latest.tar.gz
+#####tar -xzvf latest.tar.gz
+#####chown www-data. -R wordpress
+git clone https://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@github.com/pps-ciber/wordpress-pclementeciber.git wordpress
 chown www-data. -R wordpress
+cd wordpress
+mysql -uciber -psupersegura1 -h 10.100.199.203 < wordpress.dump
 
 SCRIPT
 
@@ -156,6 +160,22 @@ Vagrant.configure("2") do |config|
     end
   end   
 
+  config.vm.define "mysql" do |mysql|
+    mysql.vm.box = "ubuntu/focal64"
+    mysql.vm.box_check_update = true
+
+    mysql.vm.hostname = "ubuntu-mysql"
+
+    mysql.vm.disk :disk, size: "50GB", primary: true
+    mysql.vm.network :private_network, ip: "10.100.199.203"
+    mysql.vm.provision "shell", inline: $mysql, privileged: true
+    mysql.vm.provider "virtualbox" do |vb|
+      vb.name = "ubuntu-mysql-vb"
+      vb.memory = "2048"
+      vb.cpus = "1"
+    end
+  end
+
   config.vm.define "front1" do |front1|
     front1.vm.box = "ubuntu/focal64"
     front1.vm.box_check_update = true
@@ -193,20 +213,6 @@ Vagrant.configure("2") do |config|
     end
   end  
 
-  config.vm.define "mysql" do |mysql|
-    mysql.vm.box = "ubuntu/focal64"
-    mysql.vm.box_check_update = true
-
-    mysql.vm.hostname = "ubuntu-mysql"
-
-    mysql.vm.disk :disk, size: "50GB", primary: true
-    mysql.vm.network :private_network, ip: "10.100.199.203"
-    mysql.vm.provision "shell", inline: $mysql, privileged: true
-    mysql.vm.provider "virtualbox" do |vb|
-      vb.name = "ubuntu-mysql-vb"
-      vb.memory = "2048"
-      vb.cpus = "1"
-    end
-  end
+  
 
 end
