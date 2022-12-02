@@ -145,6 +145,18 @@ $redisclient = <<SCRIPT
 apt-get install -y redis-tools
 SCRIPT
 
+$jenkins = <<SCRIPT
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo tee \
+  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt-get update
+sudo apt-get install -y jenkins openjdk-11-jre
+
+
+SCRIPT
+
 Vagrant.configure("2") do |config|
   
   config.vm.box = "ubuntu/focal64"
@@ -238,6 +250,21 @@ Vagrant.configure("2") do |config|
     end
   end  
 
-  
+  config.vm.define "jenkins" do |jenkins|
+    jenkins.vm.box = "ubuntu/focal64"
+    jenkins.vm.box_check_update = true
+
+    jenkins.vm.hostname = "ubuntu-jenkins"
+
+    ###jenkins.vm.disk :disk, size: "50GB", primary: true
+    jenkins.vm.network "forwarded_port", guest: 8080, host: 8080
+    jenkins.vm.network :private_network, ip: "10.100.199.205"
+    jenkins.vm.provision "shell", inline: $jenkins, privileged: true
+    jenkins.vm.provider "virtualbox" do |vb|
+      vb.name = "ubuntu-jenkins"
+      vb.memory = "2048"
+      vb.cpus = "1"
+    end
+  end  
 
 end
