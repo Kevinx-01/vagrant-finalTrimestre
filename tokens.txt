@@ -12,4 +12,5 @@ https://classroom.github.com/a/GXYx-n2K
 
 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
 
-mysqldump -uciber -psupersegura1 -h 10.100.199.203 --databases wordpress --column-statistics=0 --no-tablespaces > wordpress.dump
+mysqldump -uciber -psupersegura1 -h 10.100.199.203 
+--databases wordpress --column-statistics=0 --no-tablespaces > wordpress.dump

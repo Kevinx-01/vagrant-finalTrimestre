@@ -136,6 +136,15 @@ mysql -e "Grant all privileges on wordpress.* TO 'ciber'@'%'"
 systemctl restart mysql
 SCRIPT
 
+$redisserver = <<SCRIPT
+apt-get update
+apt-get install -y redis
+SCRIPT
+
+$redisclient = <<SCRIPT
+apt-get install -y redis-tools
+SCRIPT
+
 Vagrant.configure("2") do |config|
   
   config.vm.box = "ubuntu/focal64"
@@ -208,6 +217,22 @@ Vagrant.configure("2") do |config|
     front2.vm.provision "shell", inline: $nfsclient, privileged: true
     front2.vm.provider "virtualbox" do |vb|
       vb.name = "ubuntu-front2-vb"
+      vb.memory = "2048"
+      vb.cpus = "1"
+    end
+  end  
+
+  config.vm.define "redis" do |redis|
+    redis.vm.box = "ubuntu/focal64"
+    redis.vm.box_check_update = true
+
+    redis.vm.hostname = "ubuntu-redis"
+
+    redis.vm.disk :disk, size: "50GB", primary: true
+    redis.vm.network :private_network, ip: "10.100.199.204"
+    redis.vm.provision "shell", inline: $redisserver, privileged: true
+    redis.vm.provider "virtualbox" do |vb|
+      vb.name = "ubuntu-redis-vb"
       vb.memory = "2048"
       vb.cpus = "1"
     end
