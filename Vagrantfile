@@ -68,7 +68,7 @@ cd /var/www
 #####wget https://wordpress.org/latest.tar.gz
 #####tar -xzvf latest.tar.gz
 #####chown www-data. -R wordpress
-git clone https://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@github.com/pps-ciber/wordpress-pclementeciber.git wordpress
+git clone https://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@github.com/pps-ciber/wordpress-Kevinx-01.git wordpress
 chown www-data. -R wordpress
 cd wordpress
 mysql -uciber -psupersegura1 -h 10.100.199.203 < wordpress.dump
