@@ -2,31 +2,45 @@ $haproxy = <<SCRIPT
 echo "instalando nfs haproxy"
 apt-get update
 apt-get install -y haproxy
-
 echo 'frontend http-revolver
-bind 0.0.0.0:80
-acl url_is_wp_admin path_beg /wp-admin /wp-login.php /manage
-use_backend admin-servers if url_is_wp_admin
-default_backend public-servers
+
+frontend varnish
+  bind 0.0.0.0:80
+  default_backend varnish-server
+
+frontend nginx
+  bind 0.0.0.0:8080
+  default_backend public-servers
+
+backend varnish-server
+  server s1 127.0.0.1:6081 check
 
 backend public-servers
-server s1 10.100.199.201:80 check
-server s2 10.100.199.202:80 check
-
-backend admin-servers
-server s1 10.100.199.201:80 check
+  server s1 10.100.199.201:80 check
+  server s2 10.100.199.202:80 check
 
 listen stats
-bind  0.0.0.0:1984
-stats enable
-stats scope http-revolver
-stats scope public-servers
-stats scope admin-servers
-stats uri /
-stats realm Haproxy\ Statistics
-stats auth user:password '>>  /etc/haproxy/haproxy.cfg
+  bind  0.0.0.0:1984
+  stats enable
+  stats scope http-revolver
+  stats scope public-servers
+  stats scope admin-servers
+  stats uri /
+  stats realm Haproxy\ Statistics
+  stats auth user:password '>>  /etc/haproxy/haproxy.cfg
 
 service haproxy restart
+
+SCRIPT
+
+$varnish =  <<SCRIPT
+
+apt-get install -y varnish
+cp /tmp/default.vcl /etc/varnish/default.vcl
+sed -i "s/localhost:6082/:6082/" /lib/systemd/system/varnish.service
+systemctl daemon-reload
+service varnish restart
+cat /etc/varnish/secret
 
 SCRIPT
 
@@ -153,8 +167,6 @@ echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
   /etc/apt/sources.list.d/jenkins.list > /dev/null
 sudo apt-get update
 sudo apt-get install -y jenkins openjdk-11-jre
-
-
 SCRIPT
 
 Vagrant.configure("2") do |config|
@@ -167,12 +179,13 @@ Vagrant.configure("2") do |config|
 
     haproxy.vm.hostname = "ubuntu-haproxy"
 
-    haproxy.vm.disk :disk, size: "100GB", primary: true
-
     haproxy.vm.network :private_network, ip: "10.100.199.200"
     haproxy.vm.network "forwarded_port", guest: 80, host: 80
+    haproxy.vm.network "forwarded_port", guest: 8080, host: 8080
     haproxy.vm.network "forwarded_port", guest: 1984, host: 1984
     haproxy.vm.provision "shell", inline: $haproxy, privileged: true
+    haproxy.vm.provision "file" , source: "./default.vcl" , destination: "/tmp/default.vcl"
+    haproxy.vm.provision "shell", inline: $varnish, privileged: true
 
     haproxy.vm.provider "virtualbox" do |vb|
       vb.name = "ubuntu-haproxy-vb"
